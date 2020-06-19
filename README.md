@@ -25,7 +25,7 @@ Week1 我还没进来orz
 
   - [ ] ``复习STL``:因为当时学的比较仓促,可能还有一些地方并没有理清楚.
 
-    </details>skr university学习记录
+    </details>
     
     
 

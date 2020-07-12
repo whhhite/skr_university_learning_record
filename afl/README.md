@@ -1,3 +1,7 @@
+## 学习AFL过程看过的文章.
+
+
+
 * 了解AFL
 
 [AFL漏洞挖掘技术漫谈（一）：用AFL开始你的第一次Fuzzing](https://www.freebuf.com/articles/system/191543.html)

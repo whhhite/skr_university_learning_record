@@ -52,7 +52,7 @@ STL六大部件(Components):
 
 关于for的一种用法:
 
-![1590691403789](C:\Users\59634\Desktop\4.png)
+![4](https://i.loli.net/2020/07/11/CGOHJa7NAlTrFUL.png)
 
 auto的用法:
 

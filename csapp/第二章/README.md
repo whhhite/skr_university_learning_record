@@ -30,7 +30,7 @@
 
 大多数Intel兼容机都只有小端模式.
 
-讲解程序代码: show_byte.cpp
+讲解程序代码: [show_byte.cpp](https://github.com/whhhite/skr_university_learning_record/blob/master/csapp/%E7%AC%AC%E4%BA%8C%E7%AB%A0/show_bytes.cpp)
 
 ##### 练习2.6:
 
@@ -72,6 +72,8 @@ return (x+y)>=x
 
 x>0 y=INT_MIN,两者异号不判断溢出,但其实是溢出了.
 
+[tsub_ok.cpp](https://github.com/whhhite/skr_university_learning_record/blob/master/csapp/%E7%AC%AC%E4%BA%8C%E7%AB%A0/show_bytes.cpp)
+
 #### XDR库中的安全漏洞
 
 问题是由于乘法溢出,导致复制的字节大于已分配的缓冲区的界限.
@@ -96,7 +98,7 @@ x>0 y=INT_MIN,两者异号不判断溢出,但其实是溢出了.
 
 ##### 练习题2.42
 
-见div_16.cpp
+见[div_16.cpp](https://github.com/whhhite/skr_university_learning_record/blob/master/csapp/%E7%AC%AC%E4%BA%8C%E7%AB%A0/div16.cpp)
 
 ##### 练习题2.46
 

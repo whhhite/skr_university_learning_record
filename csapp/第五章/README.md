@@ -84,6 +84,19 @@ void combine2(vec_ptr v,data_t *dest){
 
 #### 5.5 减少调用过程
 
+```
+void combine3(vec_ptr v, data_t *dest) {
+    long i;
+    long length = vec_length(v);
+    data_t *data = get_vec_start(v);
+    //直接获取数组的首元素指针, 不再调用函数
+    *dest=IDENT;
+    for (i = 0; i < length; i++) {
+        *dest = *dest OP data[i];
+    }
+}
+```
+
 这里书上提到了combine3把get_vec_element()函数调用提出来了,但是代码没有显示性能提升.
 
 #### 5.6 消除不必要的内存引用
@@ -91,5 +104,18 @@ void combine2(vec_ptr v,data_t *dest){
 在这里解答上面的问题.
 
 每次迭代时,积累变量的数值都要从内存读出再写入到内存.这样的读写很浪费,因为每次迭代开始时从dest读出来的值就是上次迭代最后写入的值.
+
+```
+void combine4(vec_ptr v, data_t *dest) {
+    long i;
+    long length = vec_length(v);
+    data_t *data = get_vec_start(v);
+    data_t acc = IDENT;
+    for (i = 0; i < length; i++) {
+        acc = acc OP ptr[i];
+    }
+    *dest = acc;
+}
+```
 
 为了消除这种不必要的内存读写,combine4引入了一个临时变量来存储.性能有了明显提高.

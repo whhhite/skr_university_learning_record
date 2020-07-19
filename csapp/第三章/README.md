@@ -140,6 +140,10 @@ addq %$8, %rsp
 
 移位量可以是一个立即数,或者放在单字节寄存器%cl上.
 
+| leaq 7 (%rax, %rax, 8), %rdx | `x + 8x + 7` |
+| ---------------------------- | ------------ |
+|                              |              |
+
 ##### 练习3.9
 
 ```
@@ -268,6 +272,22 @@ XXXXXX: 5d       pop  %rbp
 
 > 偏移量是 `0xffffff73` ，也就是 `-141` 。所以跳转目标为 `0x4005ed - 141 = 0x400560` 
 
+##### 练习3.18
+
+```
+long test(long x, long y, longz) {
+    long val = x + y + z;
+    if (x < -3) {
+        if (y < z)
+            val = x * y;
+        else
+            val = y * z;
+    } else if (x > 2) 
+        val = x * z;
+   return val;
+}
+```
+
 
 
 ##### 练习3.21
@@ -286,11 +306,67 @@ long test(long x, long y) {
 }
 ```
 
+#### 3.6.7 循环
+
 ##### 练习3.23
 
 A.`%rax` 存放 x ，`%rcx` 存放 y ，`%rdx` 存放 n 
 
 B. 用`leaq`指令 实现+y和++;
+
+##### while循环
+
+while语句的通用形式如下:
+
+```
+while(test-expr):
+
+​	body-statement
+```
+
+
+
+1. 第一种翻译方法,我们称之为`跳转到中间`,它执行一个无条件跳转跳到循环结尾处的测试,以此来执行初始的测试.
+
+```
+	goto test;
+
+loop:
+
+​	body-statement
+
+test:
+
+​	t=test-expr;
+
+​	if(t)
+
+​		goto loop;
+```
+
+2. 第二种翻译方法,我们称之为`guarded-go`,首先用条件分支,如果初始条件不成立就跳过循环,把代码变换为`do-while`循环.
+
+```
+t=test-expr;
+
+if(!t)
+
+​	goto done;
+
+loop:
+
+​	body-statement;
+
+​	t=test-expr;
+
+​	if(t)
+
+​		goto loop;
+
+done;
+```
+
+
 
 ##### 练习3.24
 
@@ -306,9 +382,148 @@ long loop_while(long a, long b)
 }
 ```
 
+##### 练习题3.26
+
+1. `jmp`
+
+2. ```
+   long fun_a(unsigned long x) {
+       long val = 0;
+       while (x) {
+           val ^= x;
+           x >>= 1;
+       }
+       return val & 0x1;
+   }
+   ```
+
+3. 奇偶校验
+
+##### for循环:
+
+```
+for(init-expr;test-expr;update-expr)
+
+​	body-statement
+```
+
+等价于
+
+```
+init-expr;
+
+while(test-expr){
+
+​	body-statement;
+
+​	update-expr
+
+}
+```
+
+GCC为for循环产生的代码时while循环的两种翻译之一.
+
+##### 练习3.28
+
+A.
+
+```
+long fun_b(unsigned long x) {
+    long val = 0;
+    long i;
+    for (i = 64; i != 0; i--) {
+        val = (val * 2) | (x & 0x1);
+        x >>= 1;
+    }
+    return val;
+}
+```
+
+B.因为是使用guarded-do生成的,而初始化为0x40,一定满足,所以没必要测试.
+
+C.reverse
+
+##### 练习3.29
+
+A. 导致i++无法执行,进入死循环.
+
+B. 用goto跳过body-statement.
+
+#### 3.6.8 switch语句
+
+swtich 语句通过使用`跳转表`这种数据结构使得实现更加高效.\
+
+GCC扩展了C语言, 加入了&&运算符用来取得指向标号的指针, 然后组成一个指针数组. 这样就可以用测试的值运算后得到的值直接进行索引来跳转.
+
+` jmp *.L4(, %rsi, 8)`
+
+跳转表:
+
+```
+.L4:
+    .quad    .L3
+    .quad    .L8
+    .quad    .L5
+    .quad    .L6
+    .quad    .L7
+```
+
+##### 练习3.30
+
+分析汇编:
+
+```
+# void switch2(long x, long *dest)
+# x in %rdi
+switch2:
+    addq    $1, %rdi    # x = x + 1 ，所以 x 的最小值是 -1    
+    cmpq    $8, %rdi    # 7结束   
+    ja      .L2         # 超过 8 就跳转到 L2，所以 L2 相当于 default   
+    jmp     *.L4(, %rdi, 8)    # 没有超过 8 就进入跳转表
+```
+
+##### 练习3.31
+
+```
+void switcher(long a, long b, long c, long *dest)
+{
+    long val;
+    switch(a) {
+    case 5:     /* Case A */
+        c = b ^ 15;
+        /* Fall through */
+    case 0:     /* Case B */
+        val = c + 112;
+        break;
+    case 2:     /* Case C */
+    case 7:     /* Case D */
+        val = (c + b) << 2;
+        break;
+    case 4:     /* Case E */
+        val = a;
+        break;
+    default:
+        val = b;
+    }
+    *dest = val;
+}
+```
+
+
+
 #### 3.7过程
 
 过程是软件中一种很重要的抽象.它提供了一种封装代码的方式,用一组指定的参数和一个可选的返回值实现了某种功能.过程在不同的语言中的表现形式不同, 比如函数, 方法等.
+
+假设过程P调用过程Q:
+
+* 传递控制: 在进入过程Q的时候,程序计数器必须被设置为Q的代码的初始地址,然后在返回时,要把程序计数器设置为P中调用Q后面那条指令的地址.
+* 传递数据: P必须能向Q提供一个或多个参数,Q也能返回一个值.
+* 分配和释放内存: Q可能需要为局部变量分配内存,返回时释放内存.
+
+##### 3.7.1 运行时栈
+
+C语言过程调用机制的一个关键特征在于使用了栈数据结构提供的后进先出的内存管理原则.
 
 ##### 3.7.3 数据传送
 
@@ -333,3 +548,147 @@ long loop_while(long a, long b)
 `int procprob(int a, short b, long *u, char *v)`
 `int procprob(int b, short a, long *v, char *u)`
 
+#### 3.7.5 寄存器中的局部存储空间
+
+根据惯例,寄存器`%rbx`,`%rbp`和`%r12~%r15`被划分为`被调用者保存寄存器`.
+
+所有其他的寄存器,除了栈指针`%rsp`,都分类为`调用者保存寄存器`
+
+
+
+##### 练习3.34
+
+A.局部值 a0 ~ a5 分别保存被调用者保存寄存器 %rbx、%r15、%r14、%13、%12 和 %rbp。
+
+B.局部值 a6 和 a7 存放在栈中相对于栈指针偏移量为 0 和 8 的地方。
+
+C. 因为用于存临时变量的寄存器只有6个. 
+
+##### 练习3.35
+
+寄存器保存参数x的值
+
+```
+long rfun(unsigned long x){
+    if( x == 0 ){
+        return return 0;
+    }
+    unsigned long nx = x >> 2;
+    long rv = rfun(nx);
+    return x + rv;
+}
+```
+
+#### 3.8 数组分配和方问
+
+#### 3.8.1 基本原则
+
+假设E是一个int型的数组,而我们想计算E[i],在此,E的地址存放在寄存器%rdx中,而i存放在寄存器%rcx中.内存引用指令为:
+
+>  movl (%rdx,%rcx,4),%eax
+
+#### 3.9.1 结构
+
+类似于数组的实现,结构的所有组成部分都存放在内存中一段连续的区域内,而指向结构的指针就是结构第一字节的地址.
+
+rp->width等价于表达式(*rp).width.
+
+结构的各个字段的选取完全是在编译时处理的.机器代码不包含关于字段声明或字段名字的信息.
+
+##### 练习3.42
+
+```
+long fun(struct ELE *ptr){
+    long value = 0;
+    while(ptr!=NULL){
+        value += ptr->v;
+        ptr= ptr->p;
+    }
+    return value;
+}
+```
+
+#### 3.9.2联合
+
+联合的空间始终等于其中最大的元素所占据的空间. 联合的一个优点是, 以不同的数据类型去访问数据的时候, 位级表示是一样的.
+
+如果数据结构中存在很多互斥的数据,使用联合能够节省非常大的空间.
+
+##### 练习3.43
+
+|         expr         | type  |                             代码                             |
+| :------------------: | :---: | :----------------------------------------------------------: |
+|      `up->t1.u`      | long  |            `movq (%rdi), %rax movq %rax, (%rsi)`             |
+|      `up->t1.v`      | short |             `movw 8(%rdi), %ax movw %ax, (%rsi)`             |
+|     `&up->t1.w`      | char* |              `addq $10, %rdi movq %rdi, (%rsi)`              |
+|      `up->t2.a`      | int*  |                     `movq %rdi, (%rsi)`                      |
+| `up->t2.a[up->t1.u]` |  int  | `movq (%rdi), %rax movl (%rdi, %rax, 4), %eax movl %eax, (%rsi)` |
+|     `*up->t2.p`      | char  |    `movq 8(%rdi), %rax movb (%rax), %al movb %al, (%rsi)`    |
+
+#### 3.9.3 数据对齐
+
+对齐限制简化了形成处理器和内存系统之间接口的硬件设计.
+
+##### 练习3.44
+
+A. `struct P1 {int i; char c; int j; char d};`
+
+|  i   |  c   |  j   |  d   | 总共 | 对齐 |
+| :--: | :--: | :--: | :--: | :--: | :--: |
+|  0   |  4   |  8   |  12  |  16  |  4   |
+
+B. `struct P2 {int i; char c; char d; long j};`
+
+|  i   |  c   |  j   |  d   | 总共 | 对齐 |
+| :--: | :--: | :--: | :--: | :--: | :--: |
+|  0   |  4   |  5   |  8   |  16  |  8   |
+
+C. `struct P3 {short w[3]; char c[3]};`
+
+|  w   |  c   | 总共 | 对齐 |
+| :--: | :--: | :--: | :--: |
+|  0   |  6   |  10  |  2   |
+
+D. `struct P4 {short w[5]; char *c[3]};`
+
+|  w   |  c   | 总共 | 对齐 |
+| :--: | :--: | :--: | :--: |
+|  0   |  16  |  40  |  8   |
+
+E. `struct P5 {struct P3 a[2]; struct P2 t};`
+
+|  a   |  t   | 总共 | 对齐 |
+| :--: | :--: | :--: | :--: |
+|  0   |  24  |  40  |  8   |
+
+##### 练习3.45
+
+A.
+
+|  字段  |  a   |  b   |  c   |  d   |  e   |  f   |  g   |  h   |
+| :----: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: |
+|  大小  |  8   |  2   |  8   |  1   |  4   |  1   |  8   |  4   |
+| 偏移量 |  0   |  8   |  16  |  24  |  28  |  32  |  40  |  48  |
+
+B. 56 个字节长。
+
+C. 从大往小排 40
+
+#### 3.10.1 理解指针
+
+* 每个指针都对应一个类型.这个类型表明该指针指向的是哪一类对象.
+  * 指针类型不是机器代码中的一部分
+  * 它们是C语言提供的一种抽象,帮助程序员避免寻址错误
+* 每个指针都有一个值
+  * 这个值是某个指定类型的对象的地址
+  * 特殊的NULL(0)值表示该指针没有指向任何地方
+* 指针用'&'运算符创建
+  * leaq指令是设计用来计算内存引用的地址的.
+  * &运算符的机器代码实现常常用这条指令来计算表达式的值
+* *操作符用于间接引用指针.
+  *  间接引用是用内存引用来实现的
+* 数组与指针紧密联系
+  * 数组引用(a[3])与指针运算和间接引用(*(a+3))有一样的效果
+* 将指针从一种类型强制转换成另一种类型,只改变它的类型,而不改变它的值.
+* 指针也可以指向函数.
+  * 函数指针的值是该函数机器代码表示中第一条指令的地址.

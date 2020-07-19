@@ -1287,7 +1287,66 @@ void combine2(vec_ptr v,data_t *dest){
 
 这个示例说明了编程时一个常见的问题,**一个看上去无足轻重的代码片段有隐藏的渐进低效率.**
 
+#### 5.4 消除循环的低效率
+
+例如书上的例子:
+
+```
+#define IDENT 0
+#define OP +
+
+void combine1(vec_ptr v,data_t *dest){
+    long i;
+    *dest = IDENT;
+
+    for (i = 0; i < vec_length(v);i++) {
+        data_t val;
+        //读取第i的索引的值到val中
+        get_vec_element(v, i, &val);
+        //将val根据OP累计到*dest中
+        *dest = *dest OP val;
+    }
+}
+```
+
+里面循环的vec_length(v)移动到循环外.
+
+```
+void combine2(vec_ptr v,data_t *dest){
+    //用局部变量存储向量长度
+    long length = vec_length(v);
+
+    long i;
+    *dest = IDENT;
+
+    for (i = 0; i < length;i++) {
+        data_t val;
+        get_vec_element(v, i, &val);
+        *dest = *dest OP val;
+    }
+}
+```
+
+效率就提高了不少.
+
+这个优化是一类常见的优化的一个例子,称为`代码移动`.这类优化包括识别要执行多次(例如在循环中)但是计算结果不会改变的计算.
+
+这个示例说明了编程时一个常见的问题,**一个看上去无足轻重的代码片段有隐藏的渐进低效率.**
+
 #### 5.5 减少调用过程
+
+```
+void combine3(vec_ptr v, data_t *dest) {
+    long i;
+    long length = vec_length(v);
+    data_t *data = get_vec_start(v);
+    //直接获取数组的首元素指针, 不再调用函数
+    *dest=IDENT;
+    for (i = 0; i < length; i++) {
+        *dest = *dest OP data[i];
+    }
+}
+```
 
 这里书上提到了combine3把get_vec_element()函数调用提出来了,但是代码没有显示性能提升.
 
@@ -1296,6 +1355,19 @@ void combine2(vec_ptr v,data_t *dest){
 在这里解答上面的问题.
 
 每次迭代时,积累变量的数值都要从内存读出再写入到内存.这样的读写很浪费,因为每次迭代开始时从dest读出来的值就是上次迭代最后写入的值.
+
+```
+void combine4(vec_ptr v, data_t *dest) {
+    long i;
+    long length = vec_length(v);
+    data_t *data = get_vec_start(v);
+    data_t acc = IDENT;
+    for (i = 0; i < length; i++) {
+        acc = acc OP ptr[i];
+    }
+    *dest = acc;
+}
+```
 
 为了消除这种不必要的内存读写,combine4引入了一个临时变量来存储.性能有了明显提高.
 

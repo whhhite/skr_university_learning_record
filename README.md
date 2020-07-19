@@ -42,7 +42,14 @@ skr university学习记录.
 - [x] 学了一点AFL的知识
 </details>
 <details>
-<summary>Week 8 AFL文件格式和kernel学习</summary>
+<summary>Week 8 AFL文件格式和补基础</summary>
 
 - [x] WinAFL : 在看关于GDI+的内容
 - [x] csapp的学习
+</details>
+<details>
+<summary>Week9 csapp学习</summary>
+
+- [x] 继续看csapp
+- [x] 做了两个简单的lab
+

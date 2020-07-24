@@ -232,15 +232,7 @@ int logicalNeg(int x) {
 代码如下:
 
 ```cpp
-int howManyBits(int x) {
-  int ans=0;
-  ans=(!!(x>>(16)))<<4;
-  ans+=((!!(x>>(8+ans)))<<3);
-  ans+=((!!(x>>(4+ans)))<<2);
-  ans+=((!!(x>>(2+ans)))<<1);
-  ans+=((!!(x>>(1+ans)))<<0);
-  return ans;
-}
+
 ```
 
 浮点数这部分基础比较差,都是参考网上的做法的.
